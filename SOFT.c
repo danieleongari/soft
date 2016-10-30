@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
   printf("  completed      norm         etot     \n") ;
   
   init_param();          // Initialize input parameters 
-  init_pot_box();       //  (choice: _box,_mol,_harm,_flat)
+  init_pot_box();       //  (choice: _box,_mol,_harm)
   init_prop();          // Initialize the kinetic & potential propagators
   init_wavefn(f2,f3,f4); // Initialize the electron wave function 
 
@@ -29,15 +29,15 @@ int main(int argc, char **argv) {
 
   for (step=1; step<=NSTEP; step++) {
     single_step(step);                  // Main routine: propagator      
-    if (step%NECAL==0) {
+    if (step==1 || step%NECAL==0) {
       calc_energy();
       print_energy(step,f1);
     }
-    if (step%NNCAL==0) {
+    if (step==1 || step%NNCAL==0) {
       calc_norm();
       print_wavefn(step,f2,f3,f4);
     }
-    if (step%(NSTEP/10)==0){
+    if (step==1|| step%(NSTEP/10)==0){
       int progress=step*100/NSTEP;
      printf("  %3d %%         %6.5f      %8.4f   \n", progress, norm, etot) ; 
     }
@@ -57,7 +57,7 @@ void init_param() {
   DT=0.001;  //Timestep [au]
   
   NECAL=10;    // Every print energy 
-  NNCAL=100;  // Every print psi, psisq, norm 
+  NNCAL=200;  // Every print psi, psisq, norm 
 
   
   dx    = LX/NX; // Calculate the mesh size [-] 
@@ -65,38 +65,22 @@ void init_param() {
 }
 
 /*----------------------------------------------------------------------------*/
-void init_pot_flat() {
-  int sx;
-  double x;
-
-  X0 = 10.0;    //Initial position of the particle [au]
-  M  = 1.0;     //Mass of the particle [au]
-  K0 = 3.0;     //Initial velocity [au] 
-  S0 = 0.5;     //Width of the gaussian (sigma) [au]
-
-  for (sx=1; sx<=NX; sx++) {
-    x = dx*sx;
-    v[sx] = 0;   //Potential
-  }
-}
-
-/*----------------------------------------------------------------------------*/
 void init_pot_box() {
   int sx;
   double x, k;
 
-  X0 = 12.0;    //Initial position of the particle [au]
+  X0 =12.0;    //Initial position of the particle [au]
   M  = 1.0;     //Mass of the particle [au]
-  K0 = 2.0;     //Initial velocity [au] 
+  K0 = 3.0;     //Initial velocity [au] 
   S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-  BH=10.0;    /* height of central barrier */
-  BW=3.0;    /* width  of central barrier */
+  BH=8.0;    /* height of central barrier */
+  BW=1.0;    /* width  of central barrier */
   EH=100.0;  /* height of edge barrier    */
 
   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
-    if (sx==1 || sx==2 || sx==NX-1 || sx==NX) /* Construct the edge potential */
+    if (sx<=NX/50 || sx>=NX-NX/50) //I don't want that the wf touches the borders 
       v[sx] = EH;    
     else if (0.5*(LX-BW)<x && x<0.5*(LX+BW)) /* Construct the barrier potential */
       v[sx] = BH;
@@ -184,6 +168,7 @@ void init_wavefn() {
   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
     gauss = exp(-(x-X0)*(x-X0)/4.0/(S0*S0));
+    //if (gauss<0.01) gauss=0;
     psi[sx][0] = gauss*cos(K0*M*(x-X0)); 	//Re 
     psi[sx][1] = gauss*sin(K0*M*(x-X0));        //Im
   }
@@ -232,14 +217,14 @@ void single_step(int step) {
     psif[j] /= NX;
   update_psi();
   kin_prop(); /* step kinetic propagation   */
-  if (step%NECAL==0)
+  if (step==1 ||step%NECAL==0)
     calc_ekin();
   store_psip();
   create_psif();
   four1(psif, (unsigned long) NX, 1);
   update_psi();
   pot_prop();  /* half step potential propagation */
-  if (step%NECAL==0)		
+  if (step==1 || step%NECAL==0)		
     calc_epot();	
 }
 

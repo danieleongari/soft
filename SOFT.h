@@ -10,7 +10,6 @@ void init_param();
 void init_pot_box();
 void init_pot_mol();
 void init_pot_harm();
-void init_pot_flat();
 void init_prop();
 void init_wavefn();
 void single_step(int step);
