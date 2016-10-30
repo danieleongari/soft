@@ -17,10 +17,10 @@ int main(int argc, char **argv) {
   FILE *f3=fopen("psisq.dat","w");
   FILE *f4=fopen("norm.dat","w");
   FILE *f5=fopen("potential.dat","w");
-
+  printf("  completed      norm         etot     \n") ;
   
   init_param();          // Initialize input parameters 
-  init_pot_flat();       //  (choice: _box,_mol,_harm,_flat)
+  init_pot_box();       //  (choice: _box,_mol,_harm,_flat)
   init_prop();          // Initialize the kinetic & potential propagators
   init_wavefn(f2,f3,f4); // Initialize the electron wave function 
 
@@ -37,6 +37,10 @@ int main(int argc, char **argv) {
       calc_norm();
       print_wavefn(step,f2,f3,f4);
     }
+    if (step%(NSTEP/10)==0){
+      int progress=step*100/NSTEP;
+     printf("  %3d %%         %6.5f      %8.4f   \n", progress, norm, etot) ; 
+    }
   }
   
   return 0;
@@ -49,11 +53,11 @@ void init_param() {
   /* initialize control parameters */
   LX=50.0;   //Box dimension [au]
  //NX see .h //Number of bins [-]
-  TT=1000;    //Simulation total time [au]
-  DT=0.01;  //Timestep [au]
+  TT=100;    //Simulation total time [au]
+  DT=0.001;  //Timestep [au]
   
-  NECAL=1;    // Every print energy 
-  NNCAL=20;  // Every print psi, psisq, norm 
+  NECAL=10;    // Every print energy 
+  NNCAL=100;  // Every print psi, psisq, norm 
 
   
   dx    = LX/NX; // Calculate the mesh size [-] 
@@ -61,22 +65,38 @@ void init_param() {
 }
 
 /*----------------------------------------------------------------------------*/
+void init_pot_flat() {
+  int sx;
+  double x;
+
+  X0 = 10.0;    //Initial position of the particle [au]
+  M  = 1.0;     //Mass of the particle [au]
+  K0 = 3.0;     //Initial velocity [au] 
+  S0 = 0.5;     //Width of the gaussian (sigma) [au]
+
+  for (sx=1; sx<=NX; sx++) {
+    x = dx*sx;
+    v[sx] = 0;   //Potential
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 void init_pot_box() {
   int sx;
   double x, k;
 
-  X0=10;    /* starting pos                      */
-  E0=9.0;   /* height of the initial gaussian WF */
-  M  = 1;     //Mass [au]
-  S0=3.0;   /* width  of the initial gaussian WF */ 
+  X0 = 12.0;    //Initial position of the particle [au]
+  M  = 1.0;     //Mass of the particle [au]
+  K0 = 2.0;     //Initial velocity [au] 
+  S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-  BH=0.8;   /* height of central barrier */
-  BW=1.0;   /* width  of central barrier */
-  EH=50.0;  /* height of edge barrier    */
+  BH=10.0;    /* height of central barrier */
+  BW=3.0;    /* width  of central barrier */
+  EH=100.0;  /* height of edge barrier    */
 
   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
-    if (sx==1 || sx==NX) /* Construct the edge potential */
+    if (sx==1 || sx==2 || sx==NX-1 || sx==NX) /* Construct the edge potential */
       v[sx] = EH;    
     else if (0.5*(LX-BW)<x && x<0.5*(LX+BW)) /* Construct the barrier potential */
       v[sx] = BH;
@@ -90,10 +110,10 @@ void init_pot_mol() {
   int sx;
   double x;
 
-  X0 = 15.0;   
-  M  = 1;     //Mass [au]
-  E0 = 0.0;
-  S0 = 1.0;
+  X0 = 15.0;    //Initial position of the particle [au]
+  M  = 1.0;     //Mass of the particle [au]
+  K0 = 0.0;     //Initial velocity [au] 
+  S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
   b = 0.3;
   D = 1.0;
@@ -123,21 +143,6 @@ void init_pot_harm() {
   }
 }
 
-/*----------------------------------------------------------------------------*/
-void init_pot_flat() {
-  int sx;
-  double x;
-
-  X0 = 10.0;    //Initial position of the particle [au]
-  M  = 1.0;     //Mass of the particle [au]
-  K0 = 3.0;     //Initial velocity [au] 
-  S0 = 0.5;     //Width of the gaussian (sigma) [au]
-
-  for (sx=1; sx<=NX; sx++) {
-    x = dx*sx;
-    v[sx] = 0;   //Potential
-  }
-}
 
 /*----------------------------------------------------------------------------*/
 void init_prop() {
