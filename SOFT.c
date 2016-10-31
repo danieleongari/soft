@@ -20,7 +20,6 @@ int main(int argc, char **argv) {
   printf("  completed      norm         etot     \n") ;
   
   init_param();          // Initialize input parameters 
-  init_pot_box();       //  (choice: _box,_mol,_harm)
   init_prop();          // Initialize the kinetic & potential propagators
   init_wavefn(f2,f3,f4); // Initialize the electron wave function 
 
@@ -64,21 +63,28 @@ void init_param() {
   NSTEP = TT/DT;  // Number of steps [au] (!Lowest integer)
 }
 
+
 /*----------------------------------------------------------------------------*/
-void init_pot_box() {
+void init_prop() {
+/*------------------------------------------------------------------------------
+  Initializes potential and kinetic operators
+------------------------------------------------------------------------------*/
   int sx;
-  double x, k;
+  double k, x;
 
-  X0 =12.0;    //Initial position of the particle [au]
-  M  = 1.0;     //Mass of the particle [au]
-  K0 = 3.0;     //Initial velocity [au] 
-  S0 = 1.0;     //Width of the gaussian (sigma) [au]
+  pot_type=1; //Choose the potential shape you want to use
 
-  BH=8.0;    /* height of central barrier */
-  BW=1.0;    /* width  of central barrier */
-  EH=100.0;  /* height of edge barrier    */
+  if      (pot_type==1) { //------------------------------------- BOX potential
+   X0 =12.0;    //Initial position of the particle [au]
+   M  = 1.0;     //Mass of the particle [au]
+   K0 = 3.0;     //Initial velocity [au] 
+   S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-  for (sx=1; sx<=NX; sx++) {
+   BH=8.0;    /* height of central barrier */
+   BW=1.0;    /* width  of central barrier */
+   EH=100.0;  /* height of edge barrier    */
+
+   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
     if (sx<=NX/50 || sx>=NX-NX/50) //I don't want that the wf touches the borders 
       v[sx] = EH;    
@@ -86,52 +92,43 @@ void init_pot_box() {
       v[sx] = BH;
     else
       v[sx] = 0.0;
+    }
   }
-}
+  else if (pot_type==2) { //------------------------------------- MORSE potential
+   X0 = 15.0;    //Initial position of the particle [au]
+   M  = 1.0;     //Mass of the particle [au]
+   K0 = 0.0;     //Initial velocity [au] 
+   S0 = 1.0;     //Width of the gaussian (sigma) [au] 
 
-/*----------------------------------------------------------------------------*/
-void init_pot_mol() {
-  int sx;
-  double x;
+   b = 0.3;
+   D = 1.0;
 
-  X0 = 15.0;    //Initial position of the particle [au]
-  M  = 1.0;     //Mass of the particle [au]
-  K0 = 0.0;     //Initial velocity [au] 
-  S0 = 1.0;     //Width of the gaussian (sigma) [au]
+   for (sx=1; sx<=NX; sx++) {
+    x = dx*sx;
+    v[sx] = D*(exp(-2*b*(x-10))-2*exp(-b*(x-10)))+D;    
+   } 
+  }
+  else if (pot_type==3) { //------------------------------------- HARMONIC potential
+   X0 = 17.0;    //Initial position of the particle [au]
+   M  = 1.0;     //Mass of the particle [au]
+   K0 =-0.5;     //Initial velocity [au] 
+   S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-  b = 0.3;
-  D = 1.0;
+   b = 0.01;    //Harmonic constant [au]
+   D = LX/2;     //Equilibrium position [au]
 
+   for (sx=1; sx<=NX; sx++) {
+    x = dx*sx;
+    v[sx] = b*(x-D)*(x-D);    
+   }
+  } //end potential definition
+
+  /* Set up half-step potential propagator */
   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
-    v[sx] = D*(exp(-2*b*(x-10))-2*exp(-b*(x-10)))+D;    //Potential
+    u[sx][0] = cos(-0.5*DT*v[sx]);
+    u[sx][1] = sin(-0.5*DT*v[sx]);
   }
-}
-
-/*----------------------------------------------------------------------------*/
-void init_pot_harm() {
-  int sx;
-  double x;
-
-  X0 = 17.0;    //Initial position of the particle [au]
-  M  = 1.0;     //Mass of the particle [au]
-  K0 =-0.5;     //Initial velocity [au] 
-  S0 = 1.0;     //Width of the gaussian (sigma) [au]
-
-  b = 0.01;    //Harmonic constant [au]
-  D = LX/2;     //Equilibrium position [au]
-
-  for (sx=1; sx<=NX; sx++) {
-    x = dx*sx;
-    v[sx] = b*(x-D)*(x-D);    //Potential
-  }
-}
-
-
-/*----------------------------------------------------------------------------*/
-void init_prop() {
-  int sx;
-  double k, x;
 
   /* Set up kinetic propagators */
   for (sx=0; sx<=NX; sx++) {
@@ -140,19 +137,10 @@ void init_prop() {
     else
       k = 2*M_PI*(sx-NX)/LX;       
     
-    /* kinetic operator */ 
-    T[sx] = 0.5*k*k/M;
-    /* kinetic propagator */
-    t[sx][0] = cos(-DT*T[sx]);
+    
+    T[sx] = 0.5*k*k/M;           // kinetic operator  
+    t[sx][0] = cos(-DT*T[sx]);   // kinetic propagator 
     t[sx][1] = sin(-DT*T[sx]);
-  }
-  
-  /* Set up potential propagator */
-  for (sx=1; sx<=NX; sx++) {
-    x = dx*sx;
-    /* Half-step potential propagator */
-    u[sx][0] = cos(-0.5*DT*v[sx]);
-    u[sx][1] = sin(-0.5*DT*v[sx]);
   }
 }
 
