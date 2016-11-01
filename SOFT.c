@@ -72,7 +72,7 @@ void init_prop() {
   int sx;
   double k, x;
 
-  pot_type=1; //Choose the potential shape you want to use
+  pot_type=3; //Choose the potential shape you want to use
 
   if      (pot_type==1) { //------------------------------------- BOX potential
    X0 =12.0;    //Initial position of the particle [au]
@@ -97,7 +97,7 @@ void init_prop() {
   else if (pot_type==2) { //------------------------------------- MORSE potential
    X0 = 15.0;    //Initial position of the particle [au]
    M  = 1.0;     //Mass of the particle [au]
-   K0 = 0.0;     //Initial velocity [au] 
+   K0 = 1.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au] 
 
    b = 0.3;
@@ -109,9 +109,9 @@ void init_prop() {
    } 
   }
   else if (pot_type==3) { //------------------------------------- HARMONIC potential
-   X0 = 17.0;    //Initial position of the particle [au]
+   X0 = 20.0;    //Initial position of the particle [au]
    M  = 1.0;     //Mass of the particle [au]
-   K0 =-0.5;     //Initial velocity [au] 
+   K0 = 0.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
    b = 0.01;    //Harmonic constant [au]
@@ -137,7 +137,6 @@ void init_prop() {
     else
       k = 2*M_PI*(sx-NX)/LX;       
     
-    
     T[sx] = 0.5*k*k/M;           // kinetic operator  
     t[sx][0] = cos(-DT*T[sx]);   // kinetic propagator 
     t[sx][1] = sin(-DT*T[sx]);
@@ -156,9 +155,8 @@ void init_wavefn() {
   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
     gauss = exp(-(x-X0)*(x-X0)/4.0/(S0*S0));
-    //if (gauss<0.01) gauss=0;
-    psi[sx][0] = gauss*cos(K0*M*(x-X0)); 	//Re 
-    psi[sx][1] = gauss*sin(K0*M*(x-X0));        //Im
+    psi[sx][0] = gauss*cos(-sqrt(M)*K0*(x-X0)); //Re 
+    psi[sx][1] = gauss*sin(-sqrt(M)*K0*(x-X0)); //Im
   }
 
   /* Normalize the wave function */
@@ -246,8 +244,7 @@ void kin_prop() {
     wi=t[sx][0]*psi[sx][1]+t[sx][1]*psi[sx][0];
     psi[sx][0]=wr;
     psi[sx][1]=wi;
-  }
-  periodic_bc();	
+  }	
 }
 
 /*----------------------------------------------------------------------------*/
