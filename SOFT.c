@@ -72,7 +72,7 @@ void init_prop() {
   int sx;
   double k, x;
 
-  pot_type=3; //Choose the potential shape you want to use
+  pot_type=1; //Choose the potential shape you want to use
 
   if      (pot_type==1) { //------------------------------------- BOX potential
    X0 =12.0;    //Initial position of the particle [au]
@@ -94,10 +94,10 @@ void init_prop() {
       v[sx] = 0.0;
     }
   }
-  else if (pot_type==2) { //------------------------------------- MORSE potential
-   X0 = 15.0;    //Initial position of the particle [au]
+  else if (pot_type==2) { //------------------------------------- MORSE potential (be careful with error from PBC)
+   X0 = 10.0;    //Initial position of the particle [au]
    M  = 1.0;     //Mass of the particle [au]
-   K0 = 1.0;     //Initial velocity [au] 
+   K0 = 0.5;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au] 
 
    b = 0.3;
@@ -109,12 +109,12 @@ void init_prop() {
    } 
   }
   else if (pot_type==3) { //------------------------------------- HARMONIC potential
-   X0 = 20.0;    //Initial position of the particle [au]
+   X0 = 22.0;    //Initial position of the particle [au]
    M  = 1.0;     //Mass of the particle [au]
-   K0 = 0.0;     //Initial velocity [au] 
+   K0 = -1.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-   b = 0.01;    //Harmonic constant [au]
+   b = 0.02;    //Harmonic constant [au]
    D = LX/2;     //Equilibrium position [au]
 
    for (sx=1; sx<=NX; sx++) {
@@ -155,8 +155,8 @@ void init_wavefn() {
   for (sx=1; sx<=NX; sx++) {
     x = dx*sx;
     gauss = exp(-(x-X0)*(x-X0)/4.0/(S0*S0));
-    psi[sx][0] = gauss*cos(-sqrt(M)*K0*(x-X0)); //Re 
-    psi[sx][1] = gauss*sin(-sqrt(M)*K0*(x-X0)); //Im
+    psi[sx][0] = gauss*cos(M*K0*(x-X0)); //Re 
+    psi[sx][1] = gauss*sin(M*K0*(x-X0)); //Im
   }
 
   /* Normalize the wave function */
