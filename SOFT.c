@@ -72,7 +72,7 @@ void init_prop() {
   int sx;
   double k, x;
 
-  pot_type=1; //Choose the potential shape you want to use
+  pot_type=3; //Choose the potential shape you want to use
 
   if      (pot_type==1) { //------------------------------------- BOX potential
    X0 =12.0;    //Initial position of the particle [au]
@@ -203,15 +203,23 @@ void single_step(int step) {
     psif[j] /= NX;
   update_psi();
   kin_prop(); /* step kinetic propagation   */
-  if (step==1 ||step%NECAL==0)
-    calc_ekin();
-  store_psip();
   create_psif();
   four1(psif, (unsigned long) NX, 1);
   update_psi();
-  pot_prop();  /* half step potential propagation */
+  pot_prop();  
+
   if (step==1 || step%NECAL==0)		
-    calc_epot();	
+    calc_epot();                             //compute the potential energy from psi
+	
+    create_psif();                           //compute the kinetic energy from the fourier transform of psi
+    four1(psif, (unsigned long) NX, -1);  
+    for (j=0; j <= 2*(NX+1); j++) 
+      psif[j] /= NX;
+    update_psi();
+    calc_ekin();
+    store_psip();                            //store the fourier transform
+    four1(psif, (unsigned long) NX, 1);
+    update_psi();
 }
 
 /*----------------------------------------------------------------------------*/
