@@ -1,5 +1,5 @@
-set yrange [*:2]
-set xrange [5:40]
+#set yrange [*:2]
+#set xrange [5:40]
 set xlabel "X"
 set ylabel "E"
 
