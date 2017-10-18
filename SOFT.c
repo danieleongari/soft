@@ -60,7 +60,7 @@ void init_param() {
 
   
   dx    = LX/NX; // Calculate the mesh size [-] 
-  NSTEP = TT/DT;  // Number of steps [au] (!Lowest integer)
+  NSTEP = TT/DT;  // Number of steps [-] (!Lowest integer)
 }
 
 
@@ -80,7 +80,7 @@ void init_prop() {
    K0 = 2.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-   BH=3.0;    /* height of central barrier */
+   BH=0.0;    /* height of central barrier */
    BW=1.0;    /* width  of central barrier */
    EH=100.0;  /* height of edge barrier    */
 
@@ -148,7 +148,7 @@ void init_wavefn() {
 /*------------------------------------------------------------------------------
   Initializes the wave function as a traveling Gaussian wave packet.
 ------------------------------------------------------------------------------*/
-  int sx,s;
+  int sx;
   double x,gauss,psisq,norm_fac;
 
   /* Calculate the the wave function value mesh point-by-point */
@@ -198,28 +198,29 @@ void single_step(int step) {
   
   pot_prop();  /* half step potential propagation */
   create_psif();
-  four1(psif, (unsigned long) NX, -1);
+  four1(psif, (unsigned long) NX, +1);
   for (j=0; j <= 2*(NX+1); j++) 
     psif[j] /= NX;
   update_psi();
   kin_prop(); /* step kinetic propagation   */
   create_psif();
-  four1(psif, (unsigned long) NX, 1);
+  four1(psif, (unsigned long) NX, -1);
   update_psi();
   pot_prop();  
 
-  if (step==1 || step%NECAL==0)		
+  if (step==1 || step%NECAL==0){		
     calc_epot();                             //compute the potential energy from psi
 	
     create_psif();                           //compute the kinetic energy from the fourier transform of psi
-    four1(psif, (unsigned long) NX, -1);  
+    four1(psif, (unsigned long) NX, +1);  
     for (j=0; j <= 2*(NX+1); j++) 
       psif[j] /= NX;
     update_psi();
     calc_ekin();
     store_psip();                            //store the fourier transform
-    four1(psif, (unsigned long) NX, 1);
+    four1(psif, (unsigned long) NX, -1);
     update_psi();
+  }
 }
 
 /*----------------------------------------------------------------------------*/
