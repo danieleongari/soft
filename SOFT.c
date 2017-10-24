@@ -72,12 +72,12 @@ void init_prop() {
   int sx;
   double k, x;
 
-  pot_type=2; //Choose the potential shape you want to use
+  pot_type=1; //Choose the potential shape you want to use
 
   if      (pot_type==1) { //------------------------------------- BOX potential
    X0 =12.0;    //Initial position of the particle [au]
    M  = 1.0;     //Mass of the particle [au]
-   K0 = 2.0;     //Initial velocity [au] 
+   K0 = 3.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
    BH=0.0;    /* height of central barrier */
