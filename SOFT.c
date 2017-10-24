@@ -14,7 +14,7 @@ int main(int argc, char **argv) {
    
   FILE *f1=fopen("energy.dat","w");
   FILE *f2=fopen("psi.dat","w");
-  FILE *f3=fopen("psisq.dat","w");
+  FILE *f3=fopen("psip.dat","w");
   FILE *f4=fopen("norm.dat","w");
   FILE *f5=fopen("potential.dat","w");
   printf("  completed      norm         etot     \n") ;
@@ -80,7 +80,7 @@ void init_prop() {
    K0 = 2.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-   BH=0.0;    /* height of central barrier */
+   BH=2.0;    /* height of central barrier */
    BW=1.0;    /* width  of central barrier */
    EH=100.0;  /* height of edge barrier    */
 
@@ -422,11 +422,11 @@ void print_wavefn(int step, FILE *f2, FILE *f3, FILE *f4) {
 -------------------------------------------------------------------------------*/
   
  int sx;
- double x, psisqsx, psipsqsx;
+ double x, k, psisqsx, psipsqsx;
 
  if (step == 0) {
- fprintf(f2,"# sx x psi_Re psi_Im psip_Re psip_Im, index=step/NNCAL \n");
- fprintf(f3,"# sx x psi^2 psip^2, index=step/NNCAL \n");
+ fprintf(f2,"# sx x psi_Re  psi_Im  psi^2 , index=step/NNCAL \n");
+ fprintf(f3,"# sx k psip_Re psip_Im psip^2, index=step/NNCAL \n");
  fprintf(f4,"# step norm xave kave\n"); 
  }
  
@@ -437,14 +437,18 @@ void print_wavefn(int step, FILE *f2, FILE *f3, FILE *f4) {
 
  for (sx=1; sx<=NX; sx++){
   x = dx*sx;
-  fprintf(f2,"%8i %15.10f %15.10f %15.10f %15.10f %15.10f\n",
-              sx,x,psi[sx][0],psi[sx][1],psip[sx][0],psip[sx][1]); // print psi.dat
   psisqsx = psi[sx][0]*psi[sx][0]+psi[sx][1]*psi[sx][1];
+  fprintf(f2,"%8i %15.10f %15.10f %15.10f %15.10f\n",sx,x,psi[sx][0],psi[sx][1],psisqsx);    // print psi.dat
+
+  if (sx < NX/2)
+     k = 2*M_PI*sx/LX;            
+  else
+     k = 2*M_PI*(sx-NX)/LX; 
   psipsqsx = psip[sx][0]*psip[sx][0]+psip[sx][1]*psip[sx][1];
-  fprintf(f3,"%8i %15.10f %15.10f %15.10f\n",sx,x,psisqsx,psipsqsx); // psisq.dat
+  fprintf(f3,"%8i %15.10f %15.10f %15.10f %15.10f\n",sx,k,psip[sx][0],psip[sx][1],psipsqsx); // print psip.dat
  }
  if (step > 0) {
-  fprintf(f4,"%8i %15.10f %15.10f  %15.10f\n",step,norm,xave,kave);  // norm.dat
+  fprintf(f4,"%8i %15.10f %15.10f  %15.10f\n",step,norm,xave,kave);                          // print norm.dat
  }
 }
 
