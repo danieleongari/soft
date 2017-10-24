@@ -50,14 +50,14 @@ t[NX+2][2]:	 t[i][] is the kinetic propagator on i (real|imaginary part)
 v[NX+2]:         v[i] is the potential energy at mesh point i
 u[NX+2][2]:      u[i][] is the potential propagator on i (real|imaginary part)
 *******************************************************************************/
-double psi[NX+2][2];
-double psip[NX+2][2]; 
-double psif[(NX+2)*2];
-double wrk[NX+2][2];
-double T[NX+2];
-double t[NX+2][2];
-double v[NX+2];
-double u[NX+2][2];
+double psi[NX+1][2];
+double psip[NX+1][2]; 
+double psif[(NX+1)*2+1]; //psif[0] is skipped
+double wrk[NX+1][2];
+double T[NX+1];
+double t[NX+1][2];
+double v[NX+1];
+double u[NX+1][2];
 
 /* Variables *******************************************************************
 dx   = Mesh spacing

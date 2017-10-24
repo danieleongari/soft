@@ -53,10 +53,10 @@ void init_param() {
   LX=50.0;   //Box dimension [au]
  //NX see .h //Number of bins [-]
   TT=100;    //Simulation total time [au]
-  DT=0.001;  //Timestep [au]
+  DT=0.01;  //Timestep [au]
   
-  NECAL=10;    // Every print energy 
-  NNCAL=200;  // Every print psi, psisq, norm 
+  NECAL=1;    // Every print energy 
+  NNCAL=20;  // Every print psi, psisq, norm 
 
   
   dx    = LX/NX; // Calculate the mesh size [-] 
@@ -72,7 +72,7 @@ void init_prop() {
   int sx;
   double k, x;
 
-  pot_type=1; //Choose the potential shape you want to use
+  pot_type=2; //Choose the potential shape you want to use
 
   if      (pot_type==1) { //------------------------------------- BOX potential
    X0 =12.0;    //Initial position of the particle [au]
@@ -80,11 +80,11 @@ void init_prop() {
    K0 = 2.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-   BH=2.0;    /* height of central barrier */
+   BH=0.0;    /* height of central barrier */
    BW=1.0;    /* width  of central barrier */
-   EH=100.0;  /* height of edge barrier    */
+   EH=000.0;  /* height of edge barrier    */
 
-   for (sx=1; sx<=NX; sx++) {
+   for (sx=0; sx<NX; sx++) {
     x = dx*sx;
     if (sx<=NX/50 || sx>=NX-NX/50) //I don't want that the wf touches the borders 
       v[sx] = EH;    
@@ -103,7 +103,7 @@ void init_prop() {
    b = 0.3;
    D = 1.0;
 
-   for (sx=1; sx<=NX; sx++) {
+   for (sx=0; sx<NX; sx++) {
     x = dx*sx;
     v[sx] = D*(exp(-2*b*(x-10))-2*exp(-b*(x-10)))+D;    
    } 
@@ -117,21 +117,22 @@ void init_prop() {
    b = 0.02;    //Harmonic constant [au]
    D = LX/2;     //Equilibrium position [au]
 
-   for (sx=1; sx<=NX; sx++) {
+   for (sx=0; sx<NX; sx++) {
     x = dx*sx;
     v[sx] = b*(x-D)*(x-D);    
    }
+  v[NX]=v[0]; //PBC
   } //end potential definition
 
   /* Set up half-step potential propagator */
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     x = dx*sx;
     u[sx][0] = cos(-0.5*DT*v[sx]);
     u[sx][1] = sin(-0.5*DT*v[sx]);
   }
 
   /* Set up kinetic propagators */
-  for (sx=0; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     if (sx < NX/2)
       k = 2*M_PI*sx/LX;            
     else
@@ -152,7 +153,7 @@ void init_wavefn() {
   double x,gauss,psisq,norm_fac;
 
   /* Calculate the the wave function value mesh point-by-point */
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     x = dx*sx;
     gauss = exp(-(x-X0)*(x-X0)/4.0/(S0*S0));
     psi[sx][0] = gauss*cos(M*K0*(x-X0)); //Re 
@@ -161,13 +162,13 @@ void init_wavefn() {
 
   /* Normalize the wave function */
   psisq=0.0;
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
       psisq += psi[sx][0]*psi[sx][0];
       psisq += psi[sx][1]*psi[sx][1];
   }
   psisq *= dx;
   norm_fac = 1.0/sqrt(psisq);
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=1; sx<NX; sx++) {
       psi[sx][0] *= norm_fac;
       psi[sx][1] *= norm_fac;
   }
@@ -183,10 +184,10 @@ void periodic_bc() {
 ------------------------------------------------------------------------------*/
   int s;
 
-    psi[0][0] = psi[NX][0];
-    psi[0][1] = psi[NX][1];
-    psi[NX+1][0] = psi[1][0];
-    psi[NX+1][1] = psi[1][1];
+    //psi[0][0] = psi[NX][0]; //Needs to be removed to make PBC work
+    //psi[0][1] = psi[NX][1]; //Needs to be removed to make PBC work
+    psi[NX][0] = psi[0][0];
+    psi[NX][1] = psi[0][1];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -231,7 +232,7 @@ void pot_prop() {
   int sx;
   double wr,wi;
   
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     wr=u[sx][0]*psi[sx][0]-u[sx][1]*psi[sx][1];
     wi=u[sx][0]*psi[sx][1]+u[sx][1]*psi[sx][0];
     psi[sx][0]=wr;
@@ -248,7 +249,7 @@ void kin_prop() {
   int sx,s;
   double wr,wi;
   
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     wr=t[sx][0]*psi[sx][0]-t[sx][1]*psi[sx][1];
     wi=t[sx][0]*psi[sx][1]+t[sx][1]*psi[sx][0];
     psi[sx][0]=wr;
@@ -315,11 +316,12 @@ checked for!).
 void create_psif() {
 /*------------------------------------------------------------------------------
   Create an array for the fourier transform.
+  Notice: psif[0] is skipped.
 -------------------------------------------------------------------------------*/
   int sx;
-  for (sx=1; sx <= NX+1; sx++) {
-    psif[2*sx-1] = psi[sx-1][0];
-    psif[2*sx] = psi[sx-1][1];
+  for (sx=0; sx <= NX; sx++) {
+    psif[2*sx+1] = psi[sx][0];
+    psif[2*sx+2] = psi[sx][1];
   }
 }
 /*----------------------------------------------------------------------------*/
@@ -328,9 +330,9 @@ void update_psi() {
   Update psi with its fourier transform.
 -------------------------------------------------------------------------------*/
   int sx;
-  for (sx=1; sx <= NX+1; sx++) {
-    psi[sx-1][0] = psif[2*sx-1];
-    psi[sx-1][1] = psif[2*sx];
+  for (sx=0; sx <= NX; sx++) {
+    psi[sx][0] = psif[2*sx+1];
+    psi[sx][1] = psif[2*sx+2];
   }
 }
 
@@ -339,14 +341,12 @@ void store_psip() {
 
   int sx;
 
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<=NX; sx++) {
 	  psip[sx][0]=psi[sx][0];
 	  psip[sx][1]=psi[sx][1];
   }
-  psip[0][0]=psip[NX][0];
-  psip[0][1]=psip[NX][1];
-  psip[NX+1][0]=psip[1][0];
-  psip[NX+1][1]=psip[1][1];
+  psip[NX][0]=psip[0][0];
+  psip[NX][1]=psip[0][1];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -357,7 +357,7 @@ void calc_ekin() {
 
   ekin = 0.0;
   kave = 0.0;
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     if (sx < NX/2)
       k = 2*M_PI*sx/LX;              
     else
@@ -374,7 +374,7 @@ void calc_epot() {
   int sx;
 
   epot = 0.0;
-  for (sx=1; sx<=NX; sx++) {
+  for (sx=0; sx<NX; sx++) {
     epot += v[sx]*(psi[sx][0]*psi[sx][0]+psi[sx][1]*psi[sx][1]);
   }
   epot *= dx;
@@ -397,20 +397,20 @@ void print_energy(int step, FILE *f1) {
 void calc_norm() {
 /*------------------------------------------------------------------------------
   Calculate the norm, average position and velocity.                 
+  Notice: the norm is integrated using the trapezoidal rule.
 -------------------------------------------------------------------------------*/
   
  int sx;
- double psisq,psisq2;
- double psipsq,psipsq2;
+ double psisq1,psisq2;
 
  norm=0.0;
  xave=0.0;
 
- for (sx=0; sx<=NX-1; sx++) {
-  psisq  = psi[sx][0]*psi[sx][0]+psi[sx][1]*psi[sx][1];
+ for (sx=0; sx<=NX; sx++) {                                                            
+  psisq1 = psi[sx][0]*psi[sx][0]+psi[sx][1]*psi[sx][1];
   psisq2 = psi[sx+1][0]*psi[sx+1][0]+psi[sx+1][1]*psi[sx+1][1];
-  norm += dx*((psisq2+psisq)/2.0);
-  xave += dx*((psisq2+psisq)/2.0)*(dx*(sx+0.5));
+  norm += dx*((psisq1+psisq2)/2.0); 
+  xave += dx*((psisq1+psisq2)/2.0)*(dx*(sx+0.5));
  }  
   norm=sqrt(norm);
 }
@@ -435,7 +435,7 @@ void print_wavefn(int step, FILE *f2, FILE *f3, FILE *f4) {
  fprintf(f3,"\n"); 
  fprintf(f3,"\n");
 
- for (sx=1; sx<=NX; sx++){
+ for (sx=0; sx<=NX; sx++){
   x = dx*sx;
   psisqsx = psi[sx][0]*psi[sx][0]+psi[sx][1]*psi[sx][1];
   fprintf(f2,"%8i %15.10f %15.10f %15.10f %15.10f\n",sx,x,psi[sx][0],psi[sx][1],psisqsx);    // print psi.dat
@@ -460,7 +460,7 @@ void print_pot(FILE *f5) {
  
  fprintf(f5,"#index x pot");
 
- for (sx=1; sx<=NX; sx++){
+ for (sx=0; sx<=NX; sx++){
   x=dx*sx;
   fprintf(f5,"%8i %15.10f %15.10f\n",sx,x,v[sx]);  //potential.dat
   }
