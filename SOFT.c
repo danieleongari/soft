@@ -80,9 +80,9 @@ void init_prop() {
    K0 = 3.0;     //Initial velocity [au] 
    S0 = 1.0;     //Width of the gaussian (sigma) [au]
 
-   BH=0.0;    /* height of central barrier */
-   BW=1.0;    /* width  of central barrier */
-   EH=000.0;  /* height of edge barrier    */
+   BH=4.0;    /* height of central barrier */
+   BW=2.0;    /* width  of central barrier */
+   EH=100.0;  /* height of edge barrier    */
 
    for (sx=0; sx<NX; sx++) {
     x = dx*sx;
